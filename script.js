@@ -1,5 +1,5 @@
 // API Configuration - uses relative path for Cloudflare Pages proxy
-const API_BASE_URL = "/api";
+const API_BASE_URL = "/bill";
 
 // Company data
 const COMPANIES = {
@@ -75,42 +75,43 @@ function addItemRow() {
     itemCount++;
     const itemsList = document.getElementById('itemsList');
     const itemRow = document.createElement('div');
-    itemRow.className = 'item-row';
+    itemRow.className = 'product-box';
     itemRow.id = `item-${itemCount}`;
     
     itemRow.innerHTML = `
-        <div class="item-row-first">
-            <div class="item-field-group">
-                <label class="item-label">Name -</label>
-                <input type="text" class="item-description" placeholder="Name" oninput="calculateItemAmount(${itemCount})">
-            </div>
-            <div class="item-field-group">
-                <label class="item-label">HSN -</label>
-                <input type="text" class="item-hsn" placeholder="HSN" oninput="calculateItemAmount(${itemCount})">
-            </div>
-            <div class="item-field-group">
-                <label class="item-label">Quantity -</label>
-                <input type="number" class="item-quantity" placeholder="Qty" min="0" step="0.01" value="1" oninput="calculateItemAmount(${itemCount})">
-            </div>
+        <div class="product-box-header">
+            <h4>Product ${itemCount}</h4>
+            <button type="button" class="btn-remove" onclick="removeItem(${itemCount})" aria-label="Remove item">×</button>
         </div>
-        <div class="item-row-second">
-            <div class="item-field-group">
-                <label class="item-label">Rate -</label>
-                <input type="number" class="item-rate" placeholder="Rate" min="0" step="0.01" value="0" oninput="calculateItemAmount(${itemCount})">
+        <div class="product-box-body">
+            <div class="product-field-row">
+                <label class="product-label" for="item-name-${itemCount}">Name :</label>
+                <input type="text" id="item-name-${itemCount}" class="item-description" placeholder="Enter Product Name" oninput="calculateItemAmount(${itemCount})">
             </div>
-            <div class="item-field-group">
-                <label class="item-label">Per -</label>
-                <select class="item-per" onchange="calculateItemAmount(${itemCount})">
+            <div class="product-field-row">
+                <label class="product-label" for="item-hsn-${itemCount}">HSN :</label>
+                <input type="text" id="item-hsn-${itemCount}" class="item-hsn" placeholder="Enter HSN Code" oninput="calculateItemAmount(${itemCount})">
+            </div>
+            <div class="product-field-row">
+                <label class="product-label" for="item-quantity-${itemCount}">Quantity :</label>
+                <input type="number" id="item-quantity-${itemCount}" class="item-quantity" placeholder="0" min="0" step="0.01" value="1" oninput="calculateItemAmount(${itemCount})">
+            </div>
+            <div class="product-field-row">
+                <label class="product-label" for="item-rate-${itemCount}">Rate :</label>
+                <input type="number" id="item-rate-${itemCount}" class="item-rate" placeholder="0.00" min="0" step="0.01" value="0" oninput="calculateItemAmount(${itemCount})">
+            </div>
+            <div class="product-field-row">
+                <label class="product-label" for="item-per-${itemCount}">Per :</label>
+                <select id="item-per-${itemCount}" class="item-per" onchange="calculateItemAmount(${itemCount})">
                     <option value="Kg">Kg</option>
                     <option value="Nos" selected>Nos</option>
                 </select>
             </div>
+            <div class="product-field-row product-amount-row">
+                <label class="product-label">Amount :</label>
+                <span class="item-amount" id="item-amount-${itemCount}">₹0.00</span>
+            </div>
         </div>
-        <div class="item-field-group">
-            <label class="item-label">Amount -</label>
-            <span class="item-amount" id="item-amount-${itemCount}">₹0.00</span>
-        </div>
-        <button type="button" class="btn-remove" onclick="removeItem(${itemCount})">Remove</button>
     `;
     
     itemsList.appendChild(itemRow);
@@ -156,7 +157,7 @@ function customRound(value) {
 function calculateTotals() {
     // Calculate product total
     let productTotal = 0;
-    document.querySelectorAll('.item-row').forEach(row => {
+    document.querySelectorAll('.product-box').forEach(row => {
         const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
         const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
         productTotal += quantity * rate;
@@ -221,6 +222,99 @@ function formatDateForAPI(dateString) {
     return `${day}-${month}-${year}`;
 }
 
+// Validation function for invoice data
+function validateInvoiceData(data) {
+    const errors = [];
+    
+    // Validate buyer_name
+    if (!data.buyer_name || typeof data.buyer_name !== 'string' || data.buyer_name.trim().length < 2) {
+        errors.push('Buyer name is required and must be at least 2 characters long');
+    }
+    
+    // Validate buyer_address
+    if (!data.buyer_address || typeof data.buyer_address !== 'string' || data.buyer_address.trim().length < 10) {
+        errors.push('Buyer address is required and must be at least 10 characters long');
+    }
+    
+    // Validate bill_no
+    if (!data.bill_no || typeof data.bill_no !== 'string' || data.bill_no.trim().length === 0) {
+        errors.push('Bill number is required');
+    }
+    
+    // Validate challan_no
+    if (!data.challan_no || typeof data.challan_no !== 'string' || data.challan_no.trim().length === 0) {
+        errors.push('Challan number is required');
+    }
+    
+    // Validate date
+    if (!data.date || typeof data.date !== 'string' || data.date.trim().length === 0) {
+        errors.push('Date is required');
+    } else {
+        // Validate date format (DD-MM-YYYY)
+        const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (!dateRegex.test(data.date)) {
+            errors.push('Date must be in DD-MM-YYYY format');
+        }
+    }
+    
+    // Validate vehicle_no (can be empty but must exist as string)
+    if (data.vehicle_no === undefined || data.vehicle_no === null) {
+        errors.push('Vehicle number field is required (can be empty)');
+    }
+    
+    // Validate place_of_delivery
+    if (!data.place_of_delivery || typeof data.place_of_delivery !== 'string' || data.place_of_delivery.trim().length === 0) {
+        errors.push('Place of delivery is required');
+    }
+    
+    // Validate loading_charge
+    if (data.loading_charge === undefined || data.loading_charge === null) {
+        errors.push('Loading charge is required (can be 0)');
+    } else if (typeof data.loading_charge !== 'number' || isNaN(data.loading_charge) || data.loading_charge < 0) {
+        errors.push('Loading charge must be a valid number (0 or greater)');
+    }
+    
+    // Validate products array
+    if (!Array.isArray(data.products) || data.products.length === 0) {
+        errors.push('At least one product is required');
+    } else {
+        // Validate each product
+        data.products.forEach((product, index) => {
+            const productNum = index + 1;
+            
+            // Validate description
+            if (!product.description || typeof product.description !== 'string' || product.description.trim().length === 0) {
+                errors.push(`Product ${productNum}: Description is required`);
+            }
+            
+            // Validate hsn
+            if (!product.hsn || typeof product.hsn !== 'string' || product.hsn.trim().length === 0) {
+                errors.push(`Product ${productNum}: HSN code is required`);
+            }
+            
+            // Validate quantity
+            if (product.quantity === undefined || product.quantity === null || typeof product.quantity !== 'number' || isNaN(product.quantity) || product.quantity <= 0) {
+                errors.push(`Product ${productNum}: Quantity must be a number greater than 0`);
+            }
+            
+            // Validate rate
+            if (product.rate === undefined || product.rate === null || typeof product.rate !== 'number' || isNaN(product.rate) || product.rate <= 0) {
+                errors.push(`Product ${productNum}: Rate must be a number greater than 0`);
+            }
+            
+            // Validate per
+            if (!product.per || typeof product.per !== 'string' || product.per.trim().length === 0) {
+                errors.push(`Product ${productNum}: Unit (Per) is required`);
+            }
+        });
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
+}
+
 function generateInvoice() {
     // Get company/client info
     const companySelect = document.getElementById('companySelect').value;
@@ -237,45 +331,120 @@ function generateInvoice() {
         return;
     }
     
-    // Get bill details
+    // Get bill details - trim all text values
     const billNo = document.getElementById('billNo').value.trim();
     const challanNo = document.getElementById('challanNo').value.trim();
     const date = document.getElementById('billDate').value;
     const vehicleNo = document.getElementById('vehicleNo').value.trim();
     const placeOfDelivery = document.getElementById('placeOfDelivery').value.trim();
     
-    if (!billNo || !date) {
-        alert('Please fill in Bill No and Date');
-        return;
-    }
-    
-    // Get products
+    // Get products - validate each product
     const productDetails = [];
-    document.querySelectorAll('.item-row').forEach(row => {
+    const productBoxes = document.querySelectorAll('.product-box');
+    let validationError = null;
+    
+    for (let index = 0; index < productBoxes.length; index++) {
+        const row = productBoxes[index];
         const description = row.querySelector('.item-description').value.trim();
         const hsn = row.querySelector('.item-hsn').value.trim();
-        const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
-        const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+        const quantityInput = row.querySelector('.item-quantity').value.trim();
+        const rateInput = row.querySelector('.item-rate').value.trim();
         const per = row.querySelector('.item-per').value || 'Nos';
         
-        if (description || hsn || quantity > 0 || rate > 0) {
+        // Only include products with at least description or hsn and valid quantity/rate
+        if (description || hsn || (quantityInput && rateInput)) {
+            const quantity = parseFloat(quantityInput);
+            const rate = parseFloat(rateInput);
+            
+            // Validate product data
+            if (!description || description.length === 0) {
+                validationError = `Product ${index + 1}: Name is required`;
+                break;
+            }
+            if (!hsn || hsn.length === 0) {
+                validationError = `Product ${index + 1}: HSN code is required`;
+                break;
+            }
+            if (isNaN(quantity) || quantity <= 0) {
+                validationError = `Product ${index + 1}: Quantity must be greater than 0`;
+                break;
+            }
+            if (isNaN(rate) || rate <= 0) {
+                validationError = `Product ${index + 1}: Rate must be greater than 0`;
+                break;
+            }
+            if (!per || per.trim().length === 0) {
+                validationError = `Product ${index + 1}: Unit (Per) is required`;
+                break;
+            }
+            
             productDetails.push({
-                description: description || '',
-                hsn: hsn || '',
+                description: description,
+                hsn: hsn,
                 quantity: quantity,
                 rate: rate,
-                per: per
+                per: per.trim()
             });
         }
-    });
+    }
     
-    if (productDetails.length === 0) {
-        alert('Please add at least one product');
+    // Check for validation errors
+    if (validationError) {
+        alert(validationError);
         return;
     }
     
-    // Get loading charge
-    const loadingCharge = parseFloat(document.getElementById('loadingCharge').value) || 0;
+    if (productDetails.length === 0) {
+        alert('Please add at least one valid product with all required fields');
+        return;
+    }
+    
+    // Get loading charge - convert to number
+    const loadingChargeInput = document.getElementById('loadingCharge').value.trim();
+    const loadingCharge = loadingChargeInput ? parseFloat(loadingChargeInput) : 0;
+    
+    if (isNaN(loadingCharge) || loadingCharge < 0) {
+        alert('Loading charge must be a valid number (0 or greater)');
+        return;
+    }
+    
+    // Validate date
+    if (!date) {
+        alert('Date is required');
+        return;
+    }
+    
+    // Format date for API
+    const formattedDate = formatDateForAPI(date);
+    
+    // Build JSON for API with all required fields
+    const apiInvoiceData = {
+        buyer_name: name.trim(),
+        buyer_address: address.trim(),
+        bill_no: billNo,
+        challan_no: challanNo,
+        date: formattedDate,
+        vehicle_no: vehicleNo, // Can be empty string
+        place_of_delivery: placeOfDelivery,
+        loading_charge: loadingCharge,
+        products: productDetails.map(item => ({
+            description: item.description.trim(),
+            hsn: item.hsn.trim(),
+            quantity: item.quantity,
+            rate: item.rate,
+            per: item.per
+        }))
+    };
+    
+    // Validate the complete invoice data
+    const validation = validateInvoiceData(apiInvoiceData);
+    
+    if (!validation.isValid) {
+        // Show all validation errors
+        const errorMessage = 'Please fix the following errors:\n\n' + validation.errors.join('\n');
+        alert(errorMessage);
+        return; // Block API call
+    }
     
     // Calculate totals (same logic as calculateTotals)
     let productTotal = 0;
@@ -290,24 +459,6 @@ function generateInvoice() {
     const roundOff = roundedFinal - finalBeforeRound;
     const cgst = gstAmount / 2;
     const sgst = gstAmount / 2;
-    
-    // Build JSON for API (matching backend format)
-    const apiInvoiceData = {
-        buyer_name: name,
-        bill_no: billNo,
-        challan_no: challanNo || '',
-        date: formatDateForAPI(date),
-        vehicle_no: vehicleNo || '',
-        place_of_delivery: placeOfDelivery || '',
-        loading_charge: loadingCharge,
-        products: productDetails.map(item => ({
-            description: item.description || '',
-            hsn: item.hsn || '',
-            quantity: item.quantity,
-            rate: item.rate,
-            per: item.per || 'Nos'
-        }))
-    };
     
     // Build JSON for display (with totals)
     const invoiceData = {
@@ -342,7 +493,7 @@ function generateInvoice() {
     // Generate preview
     generatePreview(invoiceData);
     
-    // Auto-download PDF from backend API
+    // Auto-download PDF from backend API (only if validation passed)
     downloadInvoice(apiInvoiceData, name, billNo);
     
     // Scroll to JSON
@@ -465,20 +616,54 @@ function sanitizeFilename(name) {
 
 // Download invoice PDF from backend API
 async function downloadInvoice(invoiceData, buyerName, billNo) {
+    // Final validation check before API call
+    const validation = validateInvoiceData(invoiceData);
+    if (!validation.isValid) {
+        const errorMessage = 'Validation failed before API call:\n\n' + validation.errors.join('\n');
+        alert(errorMessage);
+        return;
+    }
+    
     try {
+        // Ensure all fields are properly formatted and sanitized
+        const sanitizedData = {
+            buyer_name: String(invoiceData.buyer_name).trim(),
+            buyer_address: String(invoiceData.buyer_address).trim(),
+            bill_no: String(invoiceData.bill_no).trim(),
+            challan_no: String(invoiceData.challan_no).trim(),
+            date: String(invoiceData.date).trim(),
+            vehicle_no: String(invoiceData.vehicle_no || '').trim(),
+            place_of_delivery: String(invoiceData.place_of_delivery).trim(),
+            loading_charge: Number(invoiceData.loading_charge) || 0,
+            products: invoiceData.products.map(product => ({
+                description: String(product.description).trim(),
+                hsn: String(product.hsn).trim(),
+                quantity: Number(product.quantity),
+                rate: Number(product.rate),
+                per: String(product.per).trim()
+            }))
+        };
+        
         const response = await fetch(`${API_BASE_URL}/generate-invoice`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(invoiceData)
+            body: JSON.stringify(sanitizedData)
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`HTTP error! status: ${response.status}. ${errorText}`);
         }
 
         const blob = await response.blob();
+        
+        // Verify blob is valid
+        if (!blob || blob.size === 0) {
+            throw new Error('Received empty response from server');
+        }
+        
         const url = window.URL.createObjectURL(blob);
 
         // Get client name and bill number for filename
@@ -496,7 +681,17 @@ async function downloadInvoice(invoiceData, buyerName, billNo) {
         window.URL.revokeObjectURL(url);
     } catch (error) {
         console.error('Error downloading invoice:', error);
-        alert('Error generating invoice. Please try again or contact support.');
+        let errorMessage = 'Error generating invoice. ';
+        
+        if (error.message.includes('HTTP error')) {
+            errorMessage += error.message;
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage += 'Unable to connect to server. Please check your connection and try again.';
+        } else {
+            errorMessage += error.message || 'Please try again or contact support.';
+        }
+        
+        alert(errorMessage);
     }
 }
 
