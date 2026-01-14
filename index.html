@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Jai Bhavani Bill Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>Bill Generator</h1>
+                <p class="subtitle">Please login to continue</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">User ID</label>
+                    <input type="text" id="username" placeholder="Enter User ID" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter Password" required autocomplete="current-password">
+                </div>
+                <div id="errorMessage" class="error-message" style="display: none;">
+                    Wrong credentials. Please try again.
+                </div>
+                <button type="submit" class="btn btn-primary btn-login">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application (Hidden until login) -->
+    <div id="mainApp" class="container" style="display: none;">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1><span class="om-sign">🕉️</span> Jai Bhavani Bill Generator</h1>
+                    <p class="subtitle">Create professional invoices quickly and easily</p>
+                </div>
+                <button type="button" class="btn btn-secondary" id="logoutBtn">Logout</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="form-section">
+                <h2>Client Information</h2>
+                
+                <div class="form-group">
+                    <label for="companySelect">Select Company</label>
+                    <select id="companySelect" class="form-control">
+                        <option value="">-- Select Company --</option>
+                        <option value="vijay">Vijay Laxmi Engineering</option>
+                        <option value="pearl">Pearl Auto Springs</option>
+                        <option value="rajesh">Rajesh Cargo Movers(INDIA)Private Limited</option>
+                        <option value="yash">Shri Yash Roadways</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div id="otherCompanyFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="clientName">Client Name</label>
+                        <input type="text" id="clientName" placeholder="Enter Client Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientAddress">Client Address</label>
+                        <textarea id="clientAddress" rows="3" placeholder="Enter Client Address"></textarea>
+                    </div>
+                </div>
+
+                <div id="selectedCompanyInfo" style="display: none;">
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" id="companyName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Address</label>
+                        <textarea id="companyAddress" rows="3" readonly></textarea>
+                    </div>
+                </div>
+
+                <h2>Bill Input</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="billNo">Bill No</label>
+                        <input type="text" id="billNo" placeholder="Enter Bill Number">
+                    </div>
+                    <div class="form-group">
+                        <label for="challanNo">Challan No</label>
+                        <input type="text" id="challanNo" placeholder="Enter Challan Number">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="billDate">Date</label>
+                        <input type="date" id="billDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleNo">Vehicle No</label>
+                        <input type="text" id="vehicleNo" placeholder="Enter Vehicle Number">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="placeOfDelivery">Place of Delivery</label>
+                    <input type="text" id="placeOfDelivery" placeholder="Enter Place of Delivery">
+                </div>
+
+                <h3>Products</h3>
+                <div class="items-container">
+                    <div class="items-header">
+                        <span>Name</span>
+                        <span>HSN</span>
+                        <span>Quantity</span>
+                        <span>Rate</span>
+                        <span>Per</span>
+                        <span>Amount</span>
+                        <span>Action</span>
+                    </div>
+                    <div id="itemsList"></div>
+                    <button type="button" class="btn btn-secondary" id="addItemBtn">+ Add Product</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="loadingCharge">Loading Charge</label>
+                    <input type="number" id="loadingCharge" value="0" min="0" step="0.01" placeholder="0.00">
+                </div>
+
+                <div class="summary">
+                    <div class="summary-row">
+                        <span>Product Total:</span>
+                        <span id="productTotal">₹0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Total Amount (Product + Loading):</span>
+                        <span id="totalAmount">₹0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>GST Amount (18%):</span>
+                        <span id="gstAmount">₹0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>CGST @9%:</span>
+                        <span id="cgst">₹0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>SGST @9%:</span>
+                        <span id="sgst">₹0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Round Off:</span>
+                        <span id="roundOff">₹0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Final Payable Amount:</span>
+                        <span id="finalAmount">₹0.00</span>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="button" class="btn btn-primary" id="generateBtn">Generate Invoice</button>
+                    <button type="button" class="btn btn-secondary" id="resetBtn">Reset</button>
+                </div>
+
+                <div id="jsonOutput" style="display: none; margin-top: 20px;">
+                    <h3>JSON Output</h3>
+                    <pre id="jsonContent" class="json-display"></pre>
+                </div>
+            </div>
+
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <h2>Bill Preview</h2>
+                <div id="billPreview" class="bill-preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
