@@ -1,0 +1,6 @@
+name = "jai-bhavani-bill-generator"
+compatibility_date = "2026-01-14"
+
+# Deploy static assets
+[site]
+bucket = "./dist"
