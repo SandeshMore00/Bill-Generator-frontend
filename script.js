@@ -1,3 +1,6 @@
+// API Configuration - uses relative path for Cloudflare Pages proxy
+const API_BASE_URL = "/api";
+
 // Company data
 const COMPANIES = {
     vijay: {
@@ -463,7 +466,7 @@ function sanitizeFilename(name) {
 // Download invoice PDF from backend API
 async function downloadInvoice(invoiceData, buyerName, billNo) {
     try {
-        const response = await fetch("http://localhost:20000/generate-invoice", {
+        const response = await fetch(`${API_BASE_URL}/generate-invoice`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -493,7 +496,7 @@ async function downloadInvoice(invoiceData, buyerName, billNo) {
         window.URL.revokeObjectURL(url);
     } catch (error) {
         console.error('Error downloading invoice:', error);
-        alert('Error generating invoice. Please check if the backend server is running on http://localhost:20000');
+        alert('Error generating invoice. Please try again or contact support.');
     }
 }
 
