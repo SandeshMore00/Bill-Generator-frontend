@@ -11,39 +11,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <!-- Login Section -->
-    <div id="loginSection" class="login-container">
-        <div class="login-box">
-            <div class="login-header">
-                <h1>Bill Generator</h1>
-                <p class="subtitle">Please login to continue</p>
-            </div>
-            <form id="loginForm" class="login-form">
-                <div class="form-group">
-                    <label for="username">User ID</label>
-                    <input type="text" id="username" placeholder="Enter User ID" required autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Enter Password" required autocomplete="current-password">
-                </div>
-                <div id="errorMessage" class="error-message" style="display: none;">
-                    Wrong credentials. Please try again.
-                </div>
-                <button type="submit" class="btn btn-primary btn-login">Login</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Main Application (Hidden until login) -->
-    <div id="mainApp" class="container" style="display: none;">
+    <!-- Main Application -->
+    <div id="mainApp" class="container">
         <header>
             <div class="header-content">
                 <div>
                     <h1><span class="om-sign">🕉️</span> Jai Bhavani Bill Generator</h1>
                     <p class="subtitle">Create professional invoices quickly and easily</p>
                 </div>
-                <button type="button" class="btn btn-secondary" id="logoutBtn">Logout</button>
             </div>
         </header>
 

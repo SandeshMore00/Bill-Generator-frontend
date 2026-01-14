@@ -1,7 +1,3 @@
-// Hardcoded credentials
-const CORRECT_USERNAME = '9224381321';
-const CORRECT_PASSWORD = '9224381321';
-
 // Company data
 const COMPANIES = {
     vijay: {
@@ -22,63 +18,11 @@ const COMPANIES = {
     }
 };
 
-// Check if user is already logged in
+// Initialize application on page load
 document.addEventListener('DOMContentLoaded', function() {
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-    
-    if (isLoggedIn) {
-        showMainApp();
-    } else {
-        showLogin();
-    }
-    
-    // Login form handler
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-});
-
-function handleLogin(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const errorMessage = document.getElementById('errorMessage');
-    
-    if (username === CORRECT_USERNAME && password === CORRECT_PASSWORD) {
-        // Correct credentials
-        errorMessage.style.display = 'none';
-        sessionStorage.setItem('isLoggedIn', 'true');
-        showMainApp();
-    } else {
-        // Wrong credentials
-        errorMessage.style.display = 'block';
-        document.getElementById('password').value = '';
-        document.getElementById('username').focus();
-    }
-}
-
-function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.removeItem('isLoggedIn');
-        showLogin();
-        // Clear form
-        document.getElementById('loginForm').reset();
-        document.getElementById('errorMessage').style.display = 'none';
-    }
-}
-
-function showLogin() {
-    document.getElementById('loginSection').style.display = 'flex';
-    document.getElementById('mainApp').style.display = 'none';
-}
-
-function showMainApp() {
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    
-    // Initialize bill generator
+    // Initialize bill generator directly
     initializeBillGenerator();
-}
+});
 
 function initializeBillGenerator() {
     const today = new Date().toISOString().split('T')[0];
