@@ -1,5 +1,8 @@
 name = "jai-bhavani-bill-generator"
 compatibility_date = "2026-01-14"
 
+type = "javascript"
+
 [site]
-bucket = "./"
+bucket = "./dist"  # this is where your Vite build outputs static files
+entry-point = "workers-site"
