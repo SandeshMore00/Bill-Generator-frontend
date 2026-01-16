@@ -16,10 +16,10 @@ export default defineConfig({
     // Note: Proxy is now OPTIONAL since we use VITE_API_BASE_URL
     // Uncomment if you want to test with relative paths in development
     // proxy: {
-    //   '/bill': {
+    //   '/v1': {
     //     target: 'https://thepartykart.com',
     //     changeOrigin: true,
-    //     secure: false
+    //     secure: true
     //   }
     // }
   }

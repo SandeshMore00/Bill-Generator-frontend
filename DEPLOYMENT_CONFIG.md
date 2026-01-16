@@ -29,7 +29,7 @@ VITE_API_BASE_URL=https://thepartykart.com
 The frontend will make requests to:
 
 ```
-https://thepartykart.com/bill/generate-invoice
+https://thepartykart.com/v1/bill/generate-invoice
 ```
 
 **Method:** POST  
@@ -44,7 +44,7 @@ https://thepartykart.com/bill/generate-invoice
 
 ```bash
 # Test if backend is accessible
-curl -I https://thepartykart.com/bill/generate-invoice
+curl -I https://thepartykart.com/v1/bill/generate-invoice
 
 # Should return 200 or 405 (if GET not allowed)
 ```
@@ -52,7 +52,7 @@ curl -I https://thepartykart.com/bill/generate-invoice
 ### 2. Test with Sample Data
 
 ```bash
-curl -X POST https://thepartykart.com/bill/generate-invoice \
+curl -X POST https://thepartykart.com/v1/bill/generate-invoice \
   -H "Content-Type: application/json" \
   -d '{
     "buyer_name": "Test Client",
@@ -81,7 +81,7 @@ curl -X POST https://thepartykart.com/bill/generate-invoice \
 ### 3. Verify Response Headers
 
 ```bash
-curl -I -X POST https://thepartykart.com/bill/generate-invoice \
+curl -I -X POST https://thepartykart.com/v1/bill/generate-invoice \
   -H "Content-Type: application/json"
 
 # Check for:
@@ -138,7 +138,7 @@ If you need to proxy requests through Vite dev server, uncomment in `vite.config
 ```javascript
 server: {
   proxy: {
-    '/bill': {
+    '/v1': {
       target: 'https://thepartykart.com',
       changeOrigin: true,
       secure: true
@@ -150,7 +150,7 @@ server: {
 Then update `.env` to use relative path:
 
 ```env
-VITE_API_BASE_URL=/bill
+VITE_API_BASE_URL=
 ```
 
 ---
@@ -168,7 +168,7 @@ VITE_API_BASE_URL=/bill
 
 ### Backend (thepartykart.com)
 
-- [ ] Endpoint `/bill/generate-invoice` accepts POST requests
+- [ ] Endpoint `/v1/bill/generate-invoice` accepts POST requests
 - [ ] Returns PDF as `application/pdf`
 - [ ] Includes no-cache headers:
   - `Cache-Control: no-store, no-cache, must-revalidate, max-age=0`
@@ -186,7 +186,7 @@ VITE_API_BASE_URL=/bill
 
 **Symptoms:**
 ```
-Access to fetch at 'https://thepartykart.com/bill/generate-invoice' 
+Access to fetch at 'https://thepartykart.com/v1/bill/generate-invoice' 
 from origin 'https://your-project.pages.dev' has been blocked by CORS policy
 ```
 
@@ -218,7 +218,7 @@ app.use(cors({
 
 **Test:**
 ```bash
-curl https://thepartykart.com/bill/generate-invoice
+curl https://thepartykart.com/v1/bill/generate-invoice
 ```
 
 ### ❌ Error: "405 Method Not Allowed"
@@ -230,10 +230,10 @@ Ensure backend route accepts POST:
 
 ```python
 # Flask
-@app.route('/bill/generate-invoice', methods=['POST', 'OPTIONS'])
+@app.route('/v1/bill/generate-invoice', methods=['POST', 'OPTIONS'])
 
 # Express
-app.post('/bill/generate-invoice', ...)
+app.post('/v1/bill/generate-invoice', ...)
 ```
 
 ### ⚠️ Wrong Backend URL in Production
@@ -249,8 +249,8 @@ app.post('/bill/generate-invoice', ...)
 
 **Check in browser console:**
 ```javascript
-// Should log: https://thepartykart.com
-console.log('[API Request] POST https://thepartykart.com/bill/generate-invoice');
+// Should log: https://thepartykart.com/v1/bill/generate-invoice
+console.log('[API Request] POST https://thepartykart.com/v1/bill/generate-invoice');
 ```
 
 ---
@@ -314,7 +314,7 @@ const response = await apiRequest('/bill/generate-invoice', {
 |-------------|--------------|-------------|
 | **Local Dev** | `http://localhost:5173` | `https://thepartykart.com` |
 | **Production** | `https://your-project.pages.dev` | `https://thepartykart.com` |
-| **API Endpoint** | - | `https://thepartykart.com/bill/generate-invoice` |
+| **API Endpoint** | - | `https://thepartykart.com/v1/bill/generate-invoice` |
 
 ---
 
@@ -327,7 +327,7 @@ const response = await apiRequest('/bill/generate-invoice', {
 npm run dev
 
 # Test backend connectivity
-curl -I https://thepartykart.com/bill/generate-invoice
+curl -I https://thepartykart.com/v1/bill/generate-invoice
 ```
 
 ### Production Build
@@ -353,7 +353,7 @@ git push origin main
 
 1. **Frontend Logs:** Browser DevTools → Console
    ```
-   [API Request] POST https://thepartykart.com/bill/generate-invoice
+   [API Request] POST https://thepartykart.com/v1/bill/generate-invoice
    [API Request] Response received: 200 OK
    ```
 
@@ -370,7 +370,7 @@ git push origin main
 3. Add at least one product
 4. Click "Generate Invoice"
 5. **Expected behavior:**
-   - Console shows: `[API Request] POST https://thepartykart.com/bill/generate-invoice`
+   - Console shows: `[API Request] POST https://thepartykart.com/v1/bill/generate-invoice`
    - PDF downloads automatically
    - Filename: `{Client Name} {Bill No}.pdf`
 
@@ -401,7 +401,7 @@ git push origin main
 ## Summary
 
 ✅ **Frontend configured to use:** `https://thepartykart.com`  
-✅ **API endpoint:** `https://thepartykart.com/bill/generate-invoice`  
+✅ **API endpoint:** `https://thepartykart.com/v1/bill/generate-invoice`  
 ✅ **Local development ready**  
 ⏳ **Set environment variable in Cloudflare Pages**  
 ⏳ **Verify backend CORS and no-cache headers**  

@@ -757,7 +757,7 @@ async function downloadInvoice(invoiceData, buyerName, billNo) {
         };
         
         // apiRequest returns the blob directly after handling response
-        const blob = await apiRequest('/bill/generate-invoice', {
+        const blob = await apiRequest('/v1/bill/generate-invoice', {
             method: 'POST',
             body: JSON.stringify(sanitizedData)
         });

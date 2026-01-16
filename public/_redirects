@@ -14,6 +14,7 @@
 /*.eot  200
 
 # Don't redirect API routes (will be handled by backend via environment variable)
+/v1/*  200
 /bill/*  200
 
 # SPA fallback - redirect all other requests to index.html

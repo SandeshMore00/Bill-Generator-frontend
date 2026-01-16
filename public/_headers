@@ -3,6 +3,13 @@
 # ==========================================
 # Dynamic API Routes - NO CACHING
 # ==========================================
+/v1/*
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+  X-Content-Type-Options: nosniff
+
+# Legacy support (if needed)
 /bill/*
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
   Pragma: no-cache
