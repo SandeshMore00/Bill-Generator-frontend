@@ -1,5 +1,51 @@
-// API Configuration - uses relative path for Cloudflare Pages proxy
-const API_BASE_URL = "/bill";
+// ==========================================
+// API Configuration
+// ==========================================
+// Uses environment variable for backend URL
+// Set VITE_API_BASE_URL in .env file or Cloudflare Pages environment variables
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://13.83.89.57:9000';
+
+// API Helper Function
+async function apiRequest(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    };
+    
+    const config = {
+        ...options,
+        headers: {
+            ...defaultOptions.headers
+        }
+    };
+    
+    try {
+        console.log(`[API Request] ${config.method || 'GET'} ${url}`);
+        const response = await fetch(url, config);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[API Error] ${response.status} ${response.statusText}:`, errorText);
+            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return await response.json();
+        } else if (contentType && contentType.includes('application/pdf')) {
+            return await response.blob();
+        } else {
+            return await response.text();
+        }
+    } catch (error) {
+        console.error('[API Request Failed]:', error);
+        throw error;
+    }
+}
 
 // Company data
 const COMPANIES = {
@@ -40,6 +86,44 @@ function initializeBillGenerator() {
     document.getElementById('generateBtn').addEventListener('click', generateInvoice);
     document.getElementById('resetBtn').addEventListener('click', resetForm);
     document.getElementById('loadingCharge').addEventListener('input', calculateTotals);
+    
+    // Event delegation for dynamically added product inputs
+    // This ensures calculations work even if JS is cached or loaded async
+    const itemsList = document.getElementById('itemsList');
+    itemsList.addEventListener('input', function(e) {
+        const target = e.target;
+        
+        // Check if the input is a product field that affects amount calculation
+        if (target.matches('.item-quantity, .item-rate, .item-description, .item-hsn')) {
+            const productBox = target.closest('.product-box');
+            if (productBox) {
+                const id = productBox.id.replace('item-', '');
+                calculateItemAmount(id);
+            }
+        }
+    });
+    
+    // Event delegation for per (unit) dropdown changes
+    itemsList.addEventListener('change', function(e) {
+        if (e.target.matches('.item-per')) {
+            const productBox = e.target.closest('.product-box');
+            if (productBox) {
+                const id = productBox.id.replace('item-', '');
+                calculateItemAmount(id);
+            }
+        }
+    });
+    
+    // Event delegation for remove buttons
+    itemsList.addEventListener('click', function(e) {
+        if (e.target.matches('.remove-item-btn')) {
+            const productBox = e.target.closest('.product-box');
+            if (productBox) {
+                const id = productBox.id.replace('item-', '');
+                removeItem(id);
+            }
+        }
+    });
 }
 
 function handleCompanySelect(e) {
@@ -78,31 +162,32 @@ function addItemRow() {
     itemRow.className = 'product-box';
     itemRow.id = `item-${itemCount}`;
     
+    // No inline event handlers - using event delegation for better caching/CSP compatibility
     itemRow.innerHTML = `
         <div class="product-box-header">
             <h4>Product ${itemCount}</h4>
-            <button type="button" class="btn-remove" onclick="removeItem(${itemCount})" aria-label="Remove item">×</button>
+            <button type="button" class="btn-remove" data-item-id="${itemCount}" aria-label="Remove item">×</button>
         </div>
         <div class="product-box-body">
             <div class="product-field-row">
                 <label class="product-label" for="item-name-${itemCount}">Name :</label>
-                <input type="text" id="item-name-${itemCount}" class="item-description" placeholder="Enter Product Name" oninput="calculateItemAmount(${itemCount})">
+                <input type="text" id="item-name-${itemCount}" class="item-description" placeholder="Enter Product Name" data-item-id="${itemCount}">
             </div>
             <div class="product-field-row">
                 <label class="product-label" for="item-hsn-${itemCount}">HSN :</label>
-                <input type="text" id="item-hsn-${itemCount}" class="item-hsn" placeholder="Enter HSN Code" oninput="calculateItemAmount(${itemCount})">
+                <input type="text" id="item-hsn-${itemCount}" class="item-hsn" placeholder="Enter HSN Code" data-item-id="${itemCount}">
             </div>
             <div class="product-field-row">
                 <label class="product-label" for="item-quantity-${itemCount}">Quantity :</label>
-                <input type="number" id="item-quantity-${itemCount}" class="item-quantity" placeholder="0" min="0" step="0.01" value="1" oninput="calculateItemAmount(${itemCount})">
+                <input type="number" id="item-quantity-${itemCount}" class="item-quantity" placeholder="0" min="0" step="0.01" value="1" data-item-id="${itemCount}">
             </div>
             <div class="product-field-row">
                 <label class="product-label" for="item-rate-${itemCount}">Rate :</label>
-                <input type="number" id="item-rate-${itemCount}" class="item-rate" placeholder="0.00" min="0" step="0.01" value="0" oninput="calculateItemAmount(${itemCount})">
+                <input type="number" id="item-rate-${itemCount}" class="item-rate" placeholder="0.00" min="0" step="0.01" value="0" data-item-id="${itemCount}">
             </div>
             <div class="product-field-row">
                 <label class="product-label" for="item-per-${itemCount}">Per :</label>
-                <select id="item-per-${itemCount}" class="item-per" onchange="calculateItemAmount(${itemCount})">
+                <select id="item-per-${itemCount}" class="item-per" data-item-id="${itemCount}">
                     <option value="Kg">Kg</option>
                     <option value="Nos" selected>Nos</option>
                 </select>
@@ -128,15 +213,29 @@ function removeItem(id) {
 
 function calculateItemAmount(id) {
     const itemRow = document.getElementById(`item-${id}`);
-    if (!itemRow) return;
+    if (!itemRow) {
+        console.warn(`[calculateItemAmount] Item row not found: item-${id}`);
+        return;
+    }
     
-    const quantity = parseFloat(itemRow.querySelector('.item-quantity').value) || 0;
-    const rate = parseFloat(itemRow.querySelector('.item-rate').value) || 0;
+    const quantityInput = itemRow.querySelector('.item-quantity');
+    const rateInput = itemRow.querySelector('.item-rate');
+    
+    if (!quantityInput || !rateInput) {
+        console.error(`[calculateItemAmount] Missing inputs for item-${id}`);
+        return;
+    }
+    
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const rate = parseFloat(rateInput.value) || 0;
     const amount = quantity * rate;
     
     const amountElement = document.getElementById(`item-amount-${id}`);
     if (amountElement) {
         amountElement.textContent = formatCurrency(amount);
+        console.log(`[calculateItemAmount] Item ${id}: ${quantity} × ${rate} = ${amount}`);
+    } else {
+        console.error(`[calculateItemAmount] Amount element not found: item-amount-${id}`);
     }
     
     calculateTotals();
@@ -155,19 +254,32 @@ function customRound(value) {
 }
 
 function calculateTotals() {
+    console.log('[calculateTotals] Starting calculation...');
+    
     // Calculate product total
     let productTotal = 0;
-    document.querySelectorAll('.product-box').forEach(row => {
-        const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
-        const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
-        productTotal += quantity * rate;
+    const productBoxes = document.querySelectorAll('.product-box');
+    
+    productBoxes.forEach((row, index) => {
+        const quantityInput = row.querySelector('.item-quantity');
+        const rateInput = row.querySelector('.item-rate');
+        
+        if (quantityInput && rateInput) {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const rate = parseFloat(rateInput.value) || 0;
+            const itemTotal = quantity * rate;
+            productTotal += itemTotal;
+            console.log(`  Product ${index + 1}: ${quantity} × ${rate} = ${itemTotal}`);
+        }
     });
     
     // Get loading charge
     const loadingCharge = parseFloat(document.getElementById('loadingCharge').value) || 0;
+    console.log(`  Loading Charge: ${loadingCharge}`);
     
     // Total amount = product_total + loading_charge
     const totalAmount = productTotal + loadingCharge;
+    console.log(`  Product Total: ${productTotal}, Total Amount: ${totalAmount}`);
     
     // GST_amount = total_amount × 0.18
     const gstAmount = totalAmount * 0.18;
@@ -644,20 +756,11 @@ async function downloadInvoice(invoiceData, buyerName, billNo) {
             }))
         };
         
-        const response = await fetch(`${API_BASE_URL}/generate-invoice`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+        // apiRequest returns the blob directly after handling response
+        const blob = await apiRequest('/bill/generate-invoice', {
+            method: 'POST',
             body: JSON.stringify(sanitizedData)
         });
-
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            throw new Error(`HTTP error! status: ${response.status}. ${errorText}`);
-        }
-
-        const blob = await response.blob();
         
         // Verify blob is valid
         if (!blob || blob.size === 0) {

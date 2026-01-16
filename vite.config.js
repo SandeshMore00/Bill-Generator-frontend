@@ -13,15 +13,15 @@ export default defineConfig({
     }
   },
   server: {
-    proxy: {
-      '/bill': {
-        // target: 'http://localhost:9000',
-        // target: 'https://www.thepartykart.com',
-        target: 'http://13.83.89.57:9000',
-        changeOrigin: true,
-        secure: false
-      }
-    }
+    // Note: Proxy is now OPTIONAL since we use VITE_API_BASE_URL
+    // Uncomment if you want to test with relative paths in development
+    // proxy: {
+    //   '/bill': {
+    //     target: 'http://localhost:9000',
+    //     changeOrigin: true,
+    //     secure: false
+    //   }
+    // }
   }
 });
 
