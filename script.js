@@ -51,19 +51,51 @@ async function apiRequest(endpoint, options = {}) {
 const COMPANIES = {
     vijay: {
         name: 'Vijay Laxmi Engineering',
-        address: 'M/S: - Vijay Laxmi Engineering\nAddress: - GRD, H996, H996, OPP INDIABULLS COMPLEX, KON, KON.PANVEL, Raigad,\nMaharashtra, 410207\nGSTIN: - 27ACBPG2352G2Z0\nState Name: - Maharashtra\nState Code : - 27'
+        address: 'Address: - GRD, H996, H996, OPP INDIABULLS COMPLEX, KON, KON.PANVEL, Raigad,\nMaharashtra, 410207\nGSTIN: - 27ACBPG2352G2Z0\nState Name: - Maharashtra\nState Code : - 27'
     },
     pearl: {
         name: 'Pearl Auto Springs',
-        address: 'M/S: - Pearl Auto Springs\nAddress: - Shop No- 36, Truck Terminal\nNear Libra Weight Bridge Kalamboli\nNavi Mumbai\nGSTIN: - 27ABFFP2282B1ZG\nState Name: - Maharashtra\nState Code : - 27'
+        address: 'Address: - Shop No- 36, Truck Terminal\nNear Libra Weight Bridge Kalamboli\nNavi Mumbai\nGSTIN: - 27ABFFP2282B1ZG\nState Name: - Maharashtra\nState Code : - 27'
     },
     rajesh: {
         name: 'Rajesh Cargo Movers(INDIA)Private Limited',
-        address: 'M/S: - Rajesh Cargo Movers(INDIA)Private Limited\nAddress: - Kalamboli.\nGSTIN: - 27AAGCR8316K1ZZ\nState Name: - Maharashtra\nState Code : - 27'
+        address: 'Address: - Kalamboli.\nGSTIN: - 27AAGCR8316K1ZZ\nState Name: - Maharashtra\nState Code : - 27'
     },
     yash: {
         name: 'Shri Yash Roadways',
-        address: 'M/S: - Shri Yash Roadways\nAddress: - Steel Chembar A Wing,\n317, Kalamboli, PANVEL, Raigad,\nMaharashtra, 410207\nGSTIN: - 27AALPU0368C1ZL\nState Name: - Maharashtra\nState Code : - 27'
+        address: 'Address: - Steel Chembar A Wing,\n317, Kalamboli, PANVEL, Raigad,\nMaharashtra, 410207\nGSTIN: - 27AALPU0368C1ZL\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    pmsprings: {
+        name: 'P M SPRINGS AND SPARES',
+        address: 'Address: - 304/D Shree Complex Plot No 106/112, Sector-14, Kamothe Navi Mumbai\nGSTIN: - 27AAUFP4820H1ZV\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    bhushan: {
+        name: 'BHUSHAN LOGISTICS PVT LTD',
+        address: 'Address: - PANVEL, Raigad, Maharashtra, 410207\nGSTIN: - 27AADCB5175B1ZY\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    jagadhatri: {
+        name: 'MAA JAGADHATRI ENGINEERING WORKS',
+        address: 'Address: - Steel Market, Plot No-1420/1421, Kalamboli, Navi Mumbai, Raigad, Maharashtra, 410218\nGSTIN: - 27AINPD3464G1Z8\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    amit: {
+        name: 'AMIT AUTO PARTS',
+        address: 'Address: - 1ST FLOOR, G WING, FLAT NO. 101, Star Complex Cooperative Housing Society Nagaon Road, Anganwadi, Mhatawali, Uran, Navi Mumbai, Raigad, Maharashtra, 400702\nGSTIN: - 27ACHFA4532A1ZW\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    asp: {
+        name: 'ASP ENGINEERING WORKS',
+        address: 'Address: - Plot No. 1628, Road No. 19, Steel Market, Kalamboli, Navi Mumbai - 410218\nGSTIN: - 27BRVPN6699DIZU\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    vikas: {
+        name: 'VIKAS AUTOMOBILES & ENGINEERINGS',
+        address: 'Address: - Building No./Flat No.: Plot No. B-40, Maharashtra Industrial Development Corporation, Mangaon Road, Vile Bhagad, Mangaon, Shirawali Tarf Nijampur, Raigad, Maharashtra, 402120\nGSTIN: - 27AAZFV1589L1ZZ\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    geoservices: {
+        name: 'Geoservices Maritime Pvt. Ltd.',
+        address: 'Address: - Zion, Office No 1301 to 1310, Plot No 273, Sector 10, Kharghar, Navi Mumbai - 410210, Maharashtra, India\nGSTIN: - 27AAFCG4191E1ZN\nState Name: - Maharashtra\nState Code : - 27'
+    },
+    sai: {
+        name: 'SAI TRAILERS',
+        address: 'Address: - Road No-21 Plot No-1719, Steel Market KWC Kalamboli, Raigad\nGSTIN: - 27BTAPB4367H1ZU\nState Name: - Maharashtra\nState Code : - 27'
     }
 };
 
@@ -116,8 +148,9 @@ function initializeBillGenerator() {
     
     // Event delegation for remove buttons
     itemsList.addEventListener('click', function(e) {
-        if (e.target.matches('.remove-item-btn')) {
-            const productBox = e.target.closest('.product-box');
+        const removeBtn = e.target.closest('.btn-remove');
+        if (removeBtn) {
+            const productBox = removeBtn.closest('.product-box');
             if (productBox) {
                 const id = productBox.id.replace('item-', '');
                 removeItem(id);
@@ -463,41 +496,45 @@ function generateInvoice() {
         const rateInput = row.querySelector('.item-rate').value.trim();
         const per = row.querySelector('.item-per').value || 'Nos';
         
-        // Only include products with at least description or hsn and valid quantity/rate
-        if (description || hsn || (quantityInput && rateInput)) {
-            const quantity = parseFloat(quantityInput);
-            const rate = parseFloat(rateInput);
-            
-            // Validate product data
-            if (!description || description.length === 0) {
-                validationError = `Product ${index + 1}: Name is required`;
-                break;
-            }
-            if (!hsn || hsn.length === 0) {
-                validationError = `Product ${index + 1}: HSN code is required`;
-                break;
-            }
-            if (isNaN(quantity) || quantity <= 0) {
-                validationError = `Product ${index + 1}: Quantity must be greater than 0`;
-                break;
-            }
-            if (isNaN(rate) || rate <= 0) {
-                validationError = `Product ${index + 1}: Rate must be greater than 0`;
-                break;
-            }
-            if (!per || per.trim().length === 0) {
-                validationError = `Product ${index + 1}: Unit (Per) is required`;
-                break;
-            }
-            
-            productDetails.push({
-                description: description,
-                hsn: hsn,
-                quantity: quantity,
-                rate: rate,
-                per: per.trim()
-            });
+        // Skip completely empty products (no data entered at all)
+        const isEmpty = !description && !hsn && !quantityInput && !rateInput;
+        if (isEmpty) {
+            continue; // Skip this empty product
         }
+        
+        // Product has some data, so validate all required fields
+        const quantity = parseFloat(quantityInput);
+        const rate = parseFloat(rateInput);
+        
+        // Validate product data
+        if (!description || description.length === 0) {
+            validationError = `Product ${index + 1}: Name is required`;
+            break;
+        }
+        if (!hsn || hsn.length === 0) {
+            validationError = `Product ${index + 1}: HSN code is required`;
+            break;
+        }
+        if (isNaN(quantity) || quantity <= 0) {
+            validationError = `Product ${index + 1}: Quantity must be greater than 0`;
+            break;
+        }
+        if (isNaN(rate) || rate <= 0) {
+            validationError = `Product ${index + 1}: Rate must be greater than 0`;
+            break;
+        }
+        if (!per || per.trim().length === 0) {
+            validationError = `Product ${index + 1}: Unit (Per) is required`;
+            break;
+        }
+        
+        productDetails.push({
+            description: description,
+            hsn: hsn,
+            quantity: quantity,
+            rate: rate,
+            per: per.trim()
+        });
     }
     
     // Check for validation errors
