@@ -17,7 +17,7 @@ export default defineConfig({
     // Uncomment if you want to test with relative paths in development
     // proxy: {
     //   '/bill': {
-    //     target: 'http://localhost:9000',
+    //     target: 'https://thepartykart.com',
     //     changeOrigin: true,
     //     secure: false
     //   }

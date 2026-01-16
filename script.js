@@ -3,7 +3,7 @@
 // ==========================================
 // Uses environment variable for backend URL
 // Set VITE_API_BASE_URL in .env file or Cloudflare Pages environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://13.83.89.57:9000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://thepartykart.com';
 
 // API Helper Function
 async function apiRequest(endpoint, options = {}) {
